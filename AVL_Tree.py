@@ -1,15 +1,14 @@
 from AVL_Node import *
-# from sys import setrecursionlimit
-# lim = 10**6
-# setrecursionlimit(lim)
+
 
 class AVL_Tree:
     def __init__(self):
-        self.root = None # empty tree
-        self.parent = None # parent tree, used for 2nd and 3rd Dimension
+        self.root = None  # empty tree
+        self.parent = None
 
     def __str__(self):
-        if self.root is None: return '<empty tree>'
+        if self.root is None:
+            return '<empty tree>'
         return str(self.root)
 
     def find(self, k):
@@ -20,12 +19,9 @@ class AVL_Tree:
         y.parent = x.parent
         if y.parent is None:
             self.root = y
-            # self.root.second_dim_tree = x.second_dim_tree
-            # x.second_dim_tree.parent = self.root
         else:
             if y.parent.left is x:
                 y.parent.left = y
-
             elif y.parent.right is x:
                 y.parent.right = y
         x.right = y.left
@@ -41,8 +37,6 @@ class AVL_Tree:
         y.parent = x.parent
         if y.parent is None:
             self.root = y
-            # self.root.second_dim_tree = x.second_dim_tree
-            # x.second_dim_tree.parent = self.root
         else:
             if y.parent.left is x:
                 y.parent.left = y
@@ -57,7 +51,7 @@ class AVL_Tree:
         update_height(y)
 
     def rebalance(self, node):
-        while node is not None:
+        while node:
             update_height(node)
             if height(node.left) >= 2 + height(node.right):
                 if height(node.left.left) >= height(node.left.right):
@@ -74,32 +68,19 @@ class AVL_Tree:
             node = node.parent
 
     def insert(self, node):
-        second_dim_node = AVL_Node(node.y, node.x, node.z)
-        # third_dim_node = AVL_Node(node.z, node.y, node.x)
+        if node.dimension is 1:
+            second_dim_node = AVL_Node(node.y, node.x, node.z, 2)
+            node.second_dim_tree = AVL_Tree()
+            node.second_dim_tree.root = second_dim_node
+            node.second_dim_tree.parent = node
+
         if self.root is None:
             self.root = node
-            if not self.root.second_dim_tree and not self.parent:
-                self.root.second_dim_tree = AVL_Tree()
-                self.root.second_dim_tree.root = second_dim_node
-                self.root.second_dim_tree.parent = self
 
         else:
-            self.root.insert(node, second_dim_node)
-            if self.root.second_dim_tree:
-                self.root.second_dim_tree.root.insert(second_dim_node)
-            self.rebalance(node)
-            if self.root.second_dim_tree:
-                self.root.second_dim_tree.rebalance(second_dim_node)
-        print(node)
+            self.root.insert(node)
 
-    def firstdim(self):
-        return self.root.second_dim_tree and not self.parent and not self.root.third_dim_tree
-
-    def secondim(self):
-        return self.parent and self.root.third_dim_tree and not self.root.second_dim_tree
-
-    def thirddim(self):
-        return self.parent and not self.root.third_dim_tree and not self.root.second_dim_tree
+        self.rebalance(node)
 
     def delete(self, k):
         node = self.find(k)
@@ -111,37 +92,26 @@ class AVL_Tree:
             self.root.parent = pseudoroot
             deleted = self.root.delete()
             self.root = pseudoroot.left
-            if self.root is not None:
+            if self.root:
                 self.root.parent = None
         else:
             deleted = node.delete()
-        # node.parent is actually the old parent of the node,
-        # which is the first potentially out-of-balance node.
         self.rebalance(deleted.parent)
 
-    def range_query(self):  # x1 limit, x2 limit
+    def range_query(self, lower=None, upper=None):  # lower limit, upper limit
+        if lower is None and upper is None:
+            lower = int(input("Enter first bound for range query: "))
+            upper = int(input("Enter second bound for range query: "))
         if self.root:
-
-            x1 = int(input("Enter first bound for x_dim range query:"))
-            x2 = int(input("Enter second bound for x_dim range query:"))
-            while x2 == x1:
-                x2 = int(input("Bounds are equal. Enter something other than:", x1))
-
-            y1 = int(input("Enter first bound for y_dim range query:"))
-            y2 = int(input("Enter second bound for y_dim range query:"))
-            while y2 == y1:
-                y2 = int(input("Bounds are equal. Enter something other than:", y1))
-
-            if x1 < x2:
-                if y1 < y2:
-                    results = self.root.range_query(x1, x2, y1, y2)
-                else:
-                    results = self.root.range_query(x1, x2, y2, y1)
-            elif x1 > x2:
-                if y1 < y2:
-                    results = self.root.range_query(x2, x1, y1, y2)
-                else:
-                    results = self.root.range_query(x2, x1, y2, y1)
+            if lower < upper:
+                results = self.root.range_query(lower, upper)
+            elif lower > upper:
+                results = self.root.range_query(upper, lower)
+            else:
+                print("Lower limit is equal to upper limit. Enter new numbers to perform a range query")
+                lower = int(input("Enter first bound for range query: "))
+                upper = int(input("Enter second bound for range query: "))
+                results = self.range_query(lower, upper)
             return results
         else:
             print("Tree is empty! Can't perform a range query")

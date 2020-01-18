@@ -1,4 +1,5 @@
-import csv, random
+import csv
+import random
 from pandas import read_csv
 from AVL_Tree import *
 # from AVL_Node import AVL_Node
