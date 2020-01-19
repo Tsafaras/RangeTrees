@@ -24,13 +24,14 @@ class AVL_Tree:
                 y.parent.left = y
             elif y.parent.right is x:
                 y.parent.right = y
+
         x.right = y.left
         if x.right:
             x.right.parent = x
         y.left = x
         x.parent = y
-        update_height(x)
-        update_height(y)
+        x.update()
+        y.update()
 
     def right_rotate(self, x):
         y = x.left
@@ -47,40 +48,42 @@ class AVL_Tree:
             x.left.parent = x
         y.right = x
         x.parent = y
-        update_height(x)
-        update_height(y)
+        x.update()
+        y.update()
 
     def rebalance(self, node):
         while node:
-            update_height(node)
-            if height(node.left) >= 2 + height(node.right):
-                if height(node.left.left) >= height(node.left.right):
+            node.update()
+            if node.balance > 1:
+                if node.left.balance > 0:
                     self.right_rotate(node)
                 else:
                     self.left_rotate(node.left)
                     self.right_rotate(node)
-            elif height(node.right) >= 2 + height(node.left):
-                if height(node.right.right) >= height(node.right.left):
+                return
+
+            elif node.balance < -1:
+                if node.right.balance < 0:
                     self.left_rotate(node)
                 else:
                     self.right_rotate(node.right)
                     self.left_rotate(node)
+                return
             node = node.parent
 
     def insert(self, node):
-        if node.dimension is 1:
+        """if node.dimension is 1:
             second_dim_node = AVL_Node(node.y, node.x, node.z, 2)
             node.second_dim_tree = AVL_Tree()
             node.second_dim_tree.root = second_dim_node
             node.second_dim_tree.parent = node
-
+        """
         if self.root is None:
             self.root = node
-
         else:
             self.root.insert(node)
-
-        self.rebalance(node)
+            if node.dimension is 1:
+                self.rebalance(node.parent)
 
     def delete(self, k):
         node = self.find(k)

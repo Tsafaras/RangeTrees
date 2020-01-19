@@ -10,6 +10,8 @@ class AVL_Node:
         self.predecessor = None  # previous equal or lesser value
         self.second_dim_tree = None
         self.dimension = dimension
+        self.height = 1
+        self.balance = 0
 
     def __str__(self):  # pretty print the node
         if self.dimension is 1:
@@ -55,8 +57,9 @@ class AVL_Node:
             return
 
         '''second_dim_node has to be different in each insertion because it is 
-        being inserted on a different tree every time. Therefore, it has different predecessors,
-        different successors, different parent, different children.
+        being inserted on a different tree every time.
+        It must have (if any) different:
+        predecessor, successor, parent, children.
         '''
         if node.x <= self.x:
             if self.left is None:
@@ -68,7 +71,6 @@ class AVL_Node:
                     node.predecessor = self.predecessor
                     self.predecessor.successor = node
                 self.predecessor = node
-
             else:
                 self.left.insert(node)
         else:
@@ -81,14 +83,13 @@ class AVL_Node:
                     node.successor = self.successor
                     self.successor.predecessor = node
                 self.successor = node
-
             else:
                 self.right.insert(node)
 
         # 2nd Dimension Stuff
-        if self.dimension is 1:
-            second_dim_node = AVL_Node(node.y, node.x, node.z, 2)
-            self.second_dim_tree.insert(second_dim_node)
+        #if self.dimension is 1:
+            #second_dim_node = AVL_Node(node.y, node.x, node.z, 2)
+            #self.second_dim_tree.insert(second_dim_node)
 
     def delete(self):
         if self.left is None or self.right is None:
@@ -113,13 +114,18 @@ class AVL_Node:
             results.append(results[-1].successor)
         return results
 
-
-def height(node):  # height of this node
-    if node is None:
-        return -1
-    else:
-        return node.height
-
-
-def update_height(node):  #
-    node.height = max(height(node.left), height(node.right)) + 1
+    # left - right logic, updates the node's height and balance factor
+    def update(self):
+        if self.left:
+            if self.right:
+                self.height = max(self.left.height, self.right.height) + 1
+                self.balance = self.left.height - self.right.height
+            else:
+                self.height = self.left.height + 1
+                self.balance = self.left.height
+        elif self.right:
+            self.height = self.right.height + 1
+            self.balance = -self.right.height
+        else:
+            self.height = 1
+            self.balance = 0
