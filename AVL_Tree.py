@@ -114,20 +114,26 @@ class AVL_Tree:
             deleted = node.delete()
         self.balance(deleted.parent)
 
-    def range_query(self, lower=None, upper=None):  # lower limit, upper limit
-        if lower is None and upper is None:
-            lower = int(input("Enter first bound for range query: "))
-            upper = int(input("Enter second bound for range query: "))
+    def range_query(self):  # x_low limit, x_high limit
+        x_low = bound("first", "X")
+        x_high = bound("second", "X")
+        y_low = bound("first", "Y")
+        y_high = bound("second", "Y")
+
+        # make sure the bounds are in ascending order
+        if x_low > x_high:
+            x_low, x_high = x_high, x_low
+        if y_low > y_high:
+            y_low, y_high = y_high, y_low
+
         if self.root:
-            if lower < upper:
-                results = self.root.range_query(lower, upper)
-            elif lower > upper:
-                results = self.root.range_query(upper, lower)
-            else:
-                print("Lower limit is equal to upper limit. Enter new numbers to perform a range query")
-                lower = int(input("Enter first bound for range query: "))
-                upper = int(input("Enter second bound for range query: "))
-                results = self.range_query(lower, upper)
+            results = self.root.range_query(x_low, x_high, y_low, y_low)
             return results
         else:
             print("Tree is empty! Can't perform a range query")
+
+
+def bound(which, dim):
+    print("Enter", which, "bound for", dim, end=' dim: ')
+    i = int(input())
+    return i

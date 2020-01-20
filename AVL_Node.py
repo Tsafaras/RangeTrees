@@ -48,7 +48,7 @@ class AVL_Node:
     # ---------------------------- Functions ----------------------------
 
     def find(self, k, next=False):
-        # next is a boolean variable, used for range_query, in case the lower bound isn't found
+        # next is a boolean variable, used for range_query, in case the x_low bound isn't found
         if k == self.x:
             return self
         elif k <= self.x:
@@ -140,10 +140,10 @@ class AVL_Node:
 
             return s.delete()
 
-    def range_query(self, lower, upper):  # lower limit, upper limit
-        head = self.find(lower, True)  # head of the list
+    def range_query(self, x_low, x_high, y_low, y_high):  # x_low limit, x_high limit
+        head = self.find(x_low, True)  # head of the list
         results = [head]  # list of results, insert first element
-        while results[-1].successor and results[-1].successor.x <= upper:
+        while results[-1].successor and results[-1].successor.x <= x_high:
             # successor of last element exists
             results.append(results[-1].successor)
         return results

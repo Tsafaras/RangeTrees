@@ -20,8 +20,6 @@ tree = extract_csv()
 time = pt()  # time elapsed since start of program
 time = pt()-time
 # print("Elapsed time is:",time)
-'''
 results = tree.range_query()
 for i in results:
     print(i)
-'''
