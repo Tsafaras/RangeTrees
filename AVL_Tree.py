@@ -115,10 +115,10 @@ class AVL_Tree:
         self.balance(deleted.parent)
 
     def range_query(self):  # x_low limit, x_high limit
-        x_low = bound("first", "X")
-        x_high = bound("second", "X")
-        y_low = bound("first", "Y")
-        y_high = bound("second", "Y")
+        x_low = 10  # bound("first", "X")
+        x_high = 300  # bound("second", "X")
+        y_low = 5  # bound("first", "Y")
+        y_high = 220  # bound("second", "Y")
 
         # make sure the bounds are in ascending order
         if x_low > x_high:
@@ -127,7 +127,9 @@ class AVL_Tree:
             y_low, y_high = y_high, y_low
 
         if self.root:
-            results = self.root.range_query(x_low, x_high, y_low, y_low)
+            results = self.root.range_query(x_low, x_high, y_low, y_high)
+            if not results:
+                print("No element matches both of the range criteria.")
             return results
         else:
             print("Tree is empty! Can't perform a range query")

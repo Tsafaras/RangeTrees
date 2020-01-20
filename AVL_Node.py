@@ -37,7 +37,10 @@ class AVL_Node:
             return "{Z= " + str(self.x) + ", Y= " + str(self.y) + ", X= " + str(self.z) + "}"
 
     def __eq__(self, other):
-        return self.x is other.x and self.y is other.y and self.z is other.z
+        if other:
+            return self.x is other.x and self.y is other.y and self.z is other.z
+        else:
+            return False
 
     def __le__(self, other):
         return self.x <= other.x
@@ -48,7 +51,7 @@ class AVL_Node:
     # ---------------------------- Functions ----------------------------
 
     def find(self, k, next=False):
-        # next is a boolean variable, used for range_query, in case the x_low bound isn't found
+        # next is a boolean variable, used for range_query, in case the low bound isn't found
         if k == self.x:
             return self
         elif k <= self.x:
@@ -133,19 +136,62 @@ class AVL_Node:
                 if self.parent.right:
                     self.parent.right.parent = self.parent
                     self.parent.right.successor = self.parent
+            if self.predecessor:
+                self.predecessor.successor = self.successor
+                if self.successor:
+                    self.successor.predecessor = self.predecessor
+            else:
+                self.successor.predecessor = self.predecessor
+                if self.predecessor:
+                    self.predecessor.successor = self.successor
             return self
         else:
             s = self.predecessor
+            s.successor = self
             self.swap(s)
-
             return s.delete()
 
+    def find_node(self, k):
+        if k.dimension is 1:
+            k = AVL_Node(k.y, k.x, k.z, 2)
+        if k == self:
+            return self
+        elif k <= self:
+            return self.left.find_node(k)
+        else:
+            return self.right.find_node(k)
+
+    def find_split(self, low, high):
+        x = self.x
+        if self.x is low or self.x is high:
+            return self
+        elif self.x < low:
+            if self.x > high:
+                return self
+            else:
+                split_node = self.right.find_split(low, high)
+        elif self.x < high:
+            return self
+        else:
+            split_node = self.left.find_split(low, high)
+        return split_node
+
     def range_query(self, x_low, x_high, y_low, y_high):  # x_low limit, x_high limit
-        head = self.find(x_low, True)  # head of the list
-        results = [head]  # list of results, insert first element
-        while results[-1].successor and results[-1].successor.x <= x_high:
-            # successor of last element exists
-            results.append(results[-1].successor)
+
+        node = self.find_split(x_low, x_high)
+        if node is None:
+            return
+
+        node = node.higher_dim_tree.root.find(y_low, True)
+        if node.y < x_low:
+            return
+
+        results = [node]
+        while node.successor and node.successor.x <= y_high and x_low <= node.successor.y <= x_high:
+            # successor of last element exists and is within range
+            results.append(node.successor)
+            node = node.successor
+
         return results
 
     # left - right logic, updates the node's height and balance factor
