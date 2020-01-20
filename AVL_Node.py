@@ -1,3 +1,17 @@
+def purge(min_node, max_node):
+    if min_node <= max_node:
+        results = [min_node]  # head of the list
+        while results[-1].successor and results[-1].successor <= max_node:
+            # successor of last element exists
+            results.append(results[-1].successor)
+    else:
+        results = [max_node]  # head of the list
+        while results[-1].predecessor and results[-1].predecessor >= min_node:
+            # predecessor of last element exists
+            results.append(results[-1].predecessor)
+    return results
+
+
 class AVL_Node:
     def __init__(self, x, y, z, dimension=1):
         self.x = x
@@ -8,18 +22,30 @@ class AVL_Node:
         self.right = None
         self.successor = None  # next greater value
         self.predecessor = None  # previous equal or lesser value
-        self.second_dim_tree = None
+        self.higher_dim_tree = None
         self.dimension = dimension
         self.height = 1
         self.balance = 0
 
+    # ---------------------------- Overloaded operators ----------------------------
     def __str__(self):  # pretty print the node
         if self.dimension is 1:
             return "{X= " + str(self.x) + ", Y= " + str(self.y) + ", Z= " + str(self.z) + "}"
         elif self.dimension is 2:
-            return "{Y= " + str(self.y) + ", X= " + str(self.x) + ", Z= " + str(self.z) + "}"
+            return "{Y= " + str(self.x) + ", X= " + str(self.y) + ", Z= " + str(self.z) + "}"
         else:
-            return "{Z= " + str(self.z) + ", Y= " + str(self.y) + ", X= " + str(self.x) + "}"
+            return "{Z= " + str(self.x) + ", Y= " + str(self.y) + ", X= " + str(self.z) + "}"
+
+    def __eq__(self, other):
+        return self.x is other.x and self.y is other.y and self.z is other.z
+
+    def __le__(self, other):
+        return self.x <= other.x
+
+    def __ge__(self, other):
+        return self.x >= other.x
+
+    # ---------------------------- Functions ----------------------------
 
     def find(self, k, next=False):
         # next is a boolean variable, used for range_query, in case the lower bound isn't found
@@ -48,20 +74,22 @@ class AVL_Node:
             current = current.right
         return current
 
-    def find_predecessor(self):  # Finds predecessor of a given node
-        if self.left:
-            return self.left.find_max()
+    def find_min(self):
+        current = self
+        while current.left:
+            current = current.left
+        return current
 
     def insert(self, node):
         if node is None:
             return
 
-        '''second_dim_node has to be different in each insertion because it is 
+        '''higher_dim_node has to be different in each insertion because it is 
         being inserted on a different tree every time.
         It must have (if any) different:
         predecessor, successor, parent, children.
         '''
-        if node.x <= self.x:
+        if node <= self:
             if self.left is None:
                 self.left = node
                 node.parent = self
@@ -87,30 +115,36 @@ class AVL_Node:
                 self.right.insert(node)
 
         # 2nd Dimension Stuff
-        #if self.dimension is 1:
-            #second_dim_node = AVL_Node(node.y, node.x, node.z, 2)
-            #self.second_dim_tree.insert(second_dim_node)
+        if self.dimension is 1:
+            higher_dim_node = AVL_Node(node.y, node.x, node.z, 2)
+            self.higher_dim_tree.insert(higher_dim_node)
 
     def delete(self):
         if self.left is None or self.right is None:
             if self is self.parent.left:
                 self.parent.left = self.left or self.right
+                self.parent.predecessor = self.left or self.right
                 if self.parent.left:
                     self.parent.left.parent = self.parent
+                    self.parent.left.successor = self.parent
             else:
                 self.parent.right = self.left or self.right
+                self.parent.successor = self.left or self.right
                 if self.parent.right:
                     self.parent.right.parent = self.parent
+                    self.parent.right.successor = self.parent
             return self
         else:
-            s = self.find_predecessor()
-            self.x, s.x = s.x, self.x
+            s = self.predecessor
+            self.swap(s)
+
             return s.delete()
 
     def range_query(self, lower, upper):  # lower limit, upper limit
         head = self.find(lower, True)  # head of the list
         results = [head]  # list of results, insert first element
-        while results[-1].successor and results[-1].successor.x <= upper:  # successor of last element exists
+        while results[-1].successor and results[-1].successor.x <= upper:
+            # successor of last element exists
             results.append(results[-1].successor)
         return results
 
@@ -129,3 +163,8 @@ class AVL_Node:
         else:
             self.height = 1
             self.balance = 0
+
+    def swap(self, s):
+        self.x, s.x = s.x, self.x
+        self.y, s.y = s.y, self.y
+        self.z, s.z = s.z, self.z
