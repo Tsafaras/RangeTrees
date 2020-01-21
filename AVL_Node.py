@@ -151,16 +151,6 @@ class AVL_Node:
             self.swap(s)
             return s.delete()
 
-    def find_node(self, k):
-        if k.dimension is 1:
-            k = AVL_Node(k.y, k.x, k.z, 2)
-        if k == self:
-            return self
-        elif k <= self:
-            return self.left.find_node(k)
-        else:
-            return self.right.find_node(k)
-
     def find_split(self, low, high):
         x = self.x
         if self.x is low or self.x is high:
@@ -187,9 +177,10 @@ class AVL_Node:
             return
 
         results = [node]
-        while node.successor and node.successor.x <= y_high and x_low <= node.successor.y <= x_high:
+        while node.successor and node.successor.x <= y_high:
             # successor of last element exists and is within range
-            results.append(node.successor)
+            if x_low <= node.successor.y <= x_high:
+                results.append(node.successor)
             node = node.successor
 
         return results

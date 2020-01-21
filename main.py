@@ -15,7 +15,7 @@ def giveanumber():
 
 
 # N = giveanumber()
-# fill_csv(400)
+# fill_csv(Ν)
 tree = extract_csv()
 # print(tree) # requires "pretty print tree.txt" code
 time = pt()  # time elapsed since start of program
@@ -39,6 +39,7 @@ for i in results[1:]:
     else:
         not_x.append(i.y)
         not_x.append(i.x)
+    plt.scatter(i.y, i.x, c='green')
 
 print("Skyline elements:")
 for i in skyline:
