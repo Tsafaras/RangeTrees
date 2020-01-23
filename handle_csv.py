@@ -2,9 +2,7 @@ import csv
 import random
 from pandas import read_csv
 from AVL_Tree import *
-# from AVL_Node import AVL_Node
-from time import process_time as pt
-from math import log
+from timeit import default_timer as timer
 import matplotlib.pyplot as plt
 
 
@@ -25,12 +23,14 @@ def fill_csv(N):  # N = number of data
 def extract_csv():
     df = read_csv('data-sets/data.csv')
     tree = AVL_Tree()
-    time = pt()
+    start = timer()
     for x, y, z in zip(df['x'], df['y'], df['z']):
         node = AVL_Node(x, y, z)
         tree.insert(node)
         plt.scatter(x, y, c='blue')
-    time = -(time - pt())
+    end = timer()
+    time_elapsed = round(end-start, 3)
+    print("build time:", time_elapsed)
     # print("Elapsed time is:",time)
     # print("Time complexity (for N =",N,") is O(logN) =",log(N,2))
     return tree
