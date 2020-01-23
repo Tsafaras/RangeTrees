@@ -28,6 +28,10 @@ class AVL_Tree:
         x.right = y.left
         if x.right:
             x.right.parent = x
+        elif y.left_leaf:
+            x.right_leaf = y.left_leaf
+            x.right_leaf.parent = x
+            y.left_leaf = None
         y.left = x
         x.parent = y
         x.update()
@@ -51,6 +55,10 @@ class AVL_Tree:
         x.left = y.right
         if x.left:
             x.left.parent = x
+        elif y.right_leaf:
+            x.left_leaf = y.right_leaf
+            x.left_leaf.parent = x
+            y.right_leaf = None
         y.right = x
         x.parent = y
         x.update()
@@ -99,6 +107,9 @@ class AVL_Tree:
             self.delete(i.y)
 
     def delete(self, k):
+        begone = self.root.find_leaf(k)
+        begone.delete()
+
         node = self.find(k)
         if node is None:
             return None

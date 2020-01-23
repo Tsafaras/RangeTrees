@@ -1,16 +1,43 @@
 def purge(min_node, max_node):
-    if min_node <= max_node:
-        results = [min_node]  # head of the list
-        while results[-1].successor and results[-1].successor <= max_node:
-            # successor of last element exists
-            results.append(results[-1].successor)
-    else:
-        results = [max_node]  # head of the list
-        while results[-1].predecessor and results[-1].predecessor >= min_node:
-            # predecessor of last element exists
-            results.append(results[-1].predecessor)
+    results = [min_node]  # head of the list
+    successor = min_node.next_larger()
+    while successor and successor <= max_node:
+        # successor of last element exists
+        results.append(successor)
+        successor = successor.next_larger()
     return results
 
+
+class leaf:
+    def __init__(self, x, y, z, parent):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.parent = parent
+        self.predecessor = None
+        self.successor = None
+
+    def __str__(self):
+        if self.parent.dimension is 1:
+            return "{X= " + str(self.x) + ", Y= " + str(self.y) + ", Z= " + str(self.z) + "}"
+        elif self.parent.dimension is 2:
+            return "{Y= " + str(self.x) + ", X= " + str(self.y) + ", Z= " + str(self.z) + "}"
+        else:
+            return "{Z= " + str(self.x) + ", Y= " + str(self.y) + ", X= " + str(self.z) + "}"
+
+    def delete(self):
+        if self.predecessor and self.successor:
+            self.predecessor.successor = self.successor
+            self.successor.predecessor = self.predecessor
+        elif self.predecessor:
+            self.predecessor.successor = None
+        elif self.successor:
+            self.successor.predecessor = None
+
+        if self is self.parent.left_leaf:
+            self.parent.left_leaf = None
+        else:
+            self.parent.right_leaf = None
 
 class AVL_Node:
     def __init__(self, x, y, z, dimension=1):
@@ -20,12 +47,12 @@ class AVL_Node:
         self.parent = None
         self.left = None
         self.right = None
-        self.successor = None  # next greater value
-        self.predecessor = None  # previous equal or lesser value
         self.higher_dim_tree = None
         self.dimension = dimension
         self.height = 1
         self.balance = 0
+        self.left_leaf = leaf(x, y, z, self)
+        self.right_leaf = None
 
     # ---------------------------- Overloaded operators ----------------------------
     def __str__(self):  # pretty print the node
@@ -71,6 +98,14 @@ class AVL_Node:
             else:
                 return self.right.find(k, next)
 
+    def next_larger(self):
+        if self.right:
+            return self.right.find_min()
+        current = self
+        while current.parent and current is current.parent.right:
+            current = current.parent
+        return current.parent
+
     def find_max(self):  # Finds max value in tree and returns its node
         current = self
         while current.right:
@@ -86,34 +121,24 @@ class AVL_Node:
     def insert(self, node):
         if node is None:
             return
-
         '''higher_dim_node has to be different in each insertion because it is 
         being inserted on a different tree every time.
         It must have (if any) different:
-        predecessor, successor, parent, children.
+        parent, children.
         '''
         if node <= self:
             if self.left is None:
                 self.left = node
                 node.parent = self
 
-                node.successor = self
-                if self.predecessor:
-                    node.predecessor = self.predecessor
-                    self.predecessor.successor = node
-                self.predecessor = node
+                self.fix_left_leaf(node)
             else:
                 self.left.insert(node)
         else:
             if self.right is None:
                 self.right = node
                 node.parent = self
-
-                node.predecessor = self
-                if self.successor:
-                    node.successor = self.successor
-                    self.successor.predecessor = node
-                self.successor = node
+                self.fix_right_leaf(node)
             else:
                 self.right.insert(node)
 
@@ -126,29 +151,28 @@ class AVL_Node:
         if self.left is None or self.right is None:
             if self is self.parent.left:
                 self.parent.left = self.left or self.right
-                self.parent.predecessor = self.left or self.right
                 if self.parent.left:
                     self.parent.left.parent = self.parent
-                    self.parent.left.successor = self.parent
             else:
                 self.parent.right = self.left or self.right
-                self.parent.successor = self.left or self.right
                 if self.parent.right:
                     self.parent.right.parent = self.parent
-                    self.parent.right.successor = self.parent
-            if self.predecessor:
-                self.predecessor.successor = self.successor
-                if self.successor:
-                    self.successor.predecessor = self.predecessor
-            else:
-                self.successor.predecessor = self.predecessor
-                if self.predecessor:
-                    self.predecessor.successor = self.successor
+            if self.right_leaf:
+                self.parent.left_leaf = self.right_leaf
+                self.parent.left_leaf.parent = self.parent
+                self.right_leaf = None
             return self
         else:
-            s = self.predecessor
-            s.successor = self
+            s = self.next_larger()
             self.swap(s)
+            if s.right_leaf:
+                s.parent.left_leaf = s.right_leaf
+                s.right_leaf.parent = s.parent
+                s.right_leaf = None
+            place = self.left.find_max()
+            place.right_leaf = s.left_leaf
+            place.right_leaf.parent = place
+            s.left_leaf = None
             return s.delete()
 
     def find_split(self, low, high):
@@ -205,3 +229,41 @@ class AVL_Node:
         self.x, s.x = s.x, self.x
         self.y, s.y = s.y, self.y
         self.z, s.z = s.z, self.z
+
+    def fix_left_leaf(self, node):
+        node.right_leaf = self.left_leaf
+        node.right_leaf.parent = node
+        if node.right_leaf.predecessor:
+            node.right_leaf.predecessor.successor = node.left_leaf
+            node.left_leaf.predecessor = node.right_leaf.predecessor
+        node.left_leaf.successor = node.right_leaf
+        node.right_leaf.predecessor = node.left_leaf
+        self.left_leaf = None
+
+    def fix_right_leaf(self, node):
+        if self.right_leaf:
+            node.right_leaf = self.right_leaf
+            node.right_leaf.parent = node
+            if node.right_leaf.predecessor:
+                node.right_leaf.predecessor.successor = node.left_leaf
+                node.left_leaf.predecessor = node.right_leaf.predecessor
+            node.left_leaf.successor = node.right_leaf
+            node.right_leaf.predecessor = node.left_leaf
+            self.right_leaf = None
+        else:
+            previous = self.left_leaf or self.left.find_max_leaf()
+            if previous.successor:
+                previous.successor.predecessor = node.left_leaf
+                node.left_leaf.successor = previous.successor
+            previous.successor = node.left_leaf
+            node.left_leaf.predecessor = previous
+
+    def find_max_leaf(self):
+        candidate = self.find_max()
+        return candidate.right_leaf or candidate.left_leaf
+
+    def find_leaf(self, k):
+        if k > self.x:
+            return self.right_leaf or self.right.find_leaf(k)
+        else:
+            return self.left_leaf or self.left.find_leaf(k)
