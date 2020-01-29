@@ -1,5 +1,6 @@
 from handle_csv import *
 
+
 def giveanumber():
     size = int(input("Enter size of N: "))
     while size <= 0:
@@ -7,8 +8,10 @@ def giveanumber():
     return size
 
 # N = giveanumber()
-# fill_csv(Ν)
+#fill_csv(20)
 tree = extract_csv()
+
+#tree.inorder()
 
 start = timer()
 results = tree.range_query()

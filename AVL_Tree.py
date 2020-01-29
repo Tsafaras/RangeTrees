@@ -134,6 +134,10 @@ class AVL_Tree:
         else:
             print("Tree is empty! Can't perform a range query")
 
+    def inorder(self):
+        if self:
+            inorder(self.root)
+
 
 def bound(which, dim):
     print("Enter", which, "bound for", dim, end=' dim: ')

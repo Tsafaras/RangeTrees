@@ -5,13 +5,15 @@ from AVL_Tree import *
 from timeit import default_timer as timer
 import matplotlib.pyplot as plt
 
+my_csv = 'data.csv'
+
 
 def fill_csv(N):  # N = number of data
     x_dim = random.sample(range(1, N+1), N)
     y_dim = random.sample(range(1, N+1), N)
     z_dim = random.sample(range(1, N+1), N)
     zipped = zip(x_dim, y_dim, z_dim)
-    with open('data-sets/data4.csv', mode='w') as file:
+    with open(my_csv, mode='w') as file:
         fields = ['x', 'y', 'z']
         file_write = csv.DictWriter(file, fieldnames=fields)
 
@@ -21,7 +23,7 @@ def fill_csv(N):  # N = number of data
 
 
 def extract_csv():
-    df = read_csv('data-sets/data.csv')
+    df = read_csv(my_csv)
     tree = AVL_Tree()
     start = timer()
     for x, y, z in zip(df['x'], df['y'], df['z']):

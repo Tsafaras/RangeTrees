@@ -205,3 +205,17 @@ class AVL_Node:
         self.x, s.x = s.x, self.x
         self.y, s.y = s.y, self.y
         self.z, s.z = s.z, self.z
+
+
+def inorder(node):
+    if node:
+        inorder(node.left)
+
+        if node.dimension is 1:
+            print("I am", node, "my 2nd dim tree is:")
+            inorder(node.higher_dim_tree.root)
+        else:
+            print(node, end=' ')
+
+        inorder(node.right)
+        print()
