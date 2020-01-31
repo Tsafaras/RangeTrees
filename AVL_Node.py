@@ -1,15 +1,8 @@
-def purge(min_node, max_node):
-    results = [min_node]  # head of the list
-    successor = min_node.next_larger()
-    while successor and successor <= max_node:
-        # successor of last element exists
-        results.append(successor)
-        successor = successor.next_larger()
-    return results
+from sortedcontainers import SortedList
 
 
 class leaf:
-    def __init__(self, x, y, z, parent):
+    def __init__(self, x, y, z, parent=None):
         self.x = x
         self.y = y
         self.z = z
@@ -25,19 +18,21 @@ class leaf:
         else:
             return "{Z= " + str(self.x) + ", Y= " + str(self.y) + ", X= " + str(self.z) + "}"
 
-    def delete(self):
-        if self.predecessor and self.successor:
-            self.predecessor.successor = self.successor
-            self.successor.predecessor = self.predecessor
-        elif self.predecessor:
-            self.predecessor.successor = None
-        elif self.successor:
-            self.successor.predecessor = None
+    def __lt__(self, other):
+        return self.x < other.x
 
-        if self is self.parent.left_leaf:
-            self.parent.left_leaf = None
+    def __eq__(self, other):
+        if other:
+            return self.x is other.x and self.y is other.y and self.z is other.z
         else:
-            self.parent.right_leaf = None
+            return False
+
+    def __le__(self, other):
+        return self.x <= other.x
+
+    def __ge__(self, other):
+        return self.x >= other.x
+
 
 class AVL_Node:
     def __init__(self, x, y, z, dimension=1):
@@ -51,7 +46,10 @@ class AVL_Node:
         self.dimension = dimension
         self.height = 1
         self.balance = 0
-        self.left_leaf = leaf(x, y, z, self)
+        if dimension is 1:
+            self.left_leaf = leaf(x, y, z, self)
+        else:
+            self.left_leaf = None
         self.right_leaf = None
 
     # ---------------------------- Overloaded operators ----------------------------
@@ -106,6 +104,14 @@ class AVL_Node:
             current = current.parent
         return current.parent
 
+    def find_predecessor(self):
+        if self.left:
+            return self.left.find_max()
+        current = self
+        while current.parent and current is current.parent.left:
+            current = current.parent
+        return current.parent
+
     def find_max(self):  # Finds max value in tree and returns its node
         current = self
         while current.right:
@@ -131,85 +137,21 @@ class AVL_Node:
                 self.left = node
                 node.parent = self
 
-                self.fix_left_leaf(node)
+                if self.dimension is 1:
+                    self.fix_left_leaf(node)
             else:
                 self.left.insert(node)
         else:
             if self.right is None:
                 self.right = node
                 node.parent = self
-                self.fix_right_leaf(node)
+
+                if self.dimension is 1:
+                    self.fix_right_leaf(node)
             else:
                 self.right.insert(node)
 
-        # 2nd Dimension Stuff
-        if self.dimension is 1:
-            higher_dim_node = AVL_Node(node.y, node.x, node.z, 2)
-            self.higher_dim_tree.insert(higher_dim_node)
-
-    def delete(self):
-        if self.left is None or self.right is None:
-            if self is self.parent.left:
-                self.parent.left = self.left or self.right
-                if self.parent.left:
-                    self.parent.left.parent = self.parent
-            else:
-                self.parent.right = self.left or self.right
-                if self.parent.right:
-                    self.parent.right.parent = self.parent
-            if self.right_leaf:
-                self.parent.left_leaf = self.right_leaf
-                self.parent.left_leaf.parent = self.parent
-                self.right_leaf = None
-            return self
-        else:
-            s = self.next_larger()
-            self.swap(s)
-            if s.right_leaf:
-                s.parent.left_leaf = s.right_leaf
-                s.right_leaf.parent = s.parent
-                s.right_leaf = None
-            place = self.left.find_max()
-            place.right_leaf = s.left_leaf
-            place.right_leaf.parent = place
-            s.left_leaf = None
-            return s.delete()
-
-    def find_split(self, low, high):
-        x = self.x
-        if self.x is low or self.x is high:
-            return self
-        elif self.x < low:
-            if self.x > high:
-                return self
-            else:
-                split_node = self.right.find_split(low, high)
-        elif self.x < high:
-            return self
-        else:
-            split_node = self.left.find_split(low, high)
-        return split_node
-
-    def range_query(self, x_low, x_high, y_low, y_high):  # x_low limit, x_high limit
-
-        node = self.find_split(x_low, x_high)
-        if node is None:
-            return
-
-        node = node.higher_dim_tree.root.find(y_low, True)
-        if node.y < x_low:
-            return
-
-        results = [node]
-        while node.successor and node.successor.x <= y_high:
-            # successor of last element exists and is within range
-            if x_low <= node.successor.y <= x_high:
-                results.append(node.successor)
-            node = node.successor
-
-        return results
-
-    # left - right logic, updates the node's height and balance factor
+    # left - right logic, updates the node's height and its balance factor
     def update(self):
         if self.left:
             if self.right:
@@ -261,6 +203,185 @@ class AVL_Node:
     def find_max_leaf(self):
         candidate = self.find_max()
         return candidate.right_leaf or candidate.left_leaf
+
+    def inorder_attach(self, k):
+        # First recur on left child
+        if self.left:
+            if self.left.inorder_attach(k):
+                return True
+        elif not self.left_leaf:
+            k.parent = self
+            self.left_leaf = k
+            return True
+
+        # now recur on right child
+        if self.right:
+            if self.right.inorder_attach(k):
+                return True
+        elif not self.right_leaf:
+            k.parent = self
+            self.right_leaf = k
+            return True
+
+    def postorder_traversal(self):
+        # First recur on left child
+        if self.left:
+            self.left.postorder_traversal()
+
+        # the recur on right child
+        if self.right:
+            self.right.postorder_traversal()
+
+        self.postorder_insertion(self)
+        j = None
+        for i, j in zip(self.higher_dim_tree.leaves_hanging, self.higher_dim_tree.leaves_hanging[1:]):
+            if j:
+                i.successor = j
+                j.predecessor = i
+            self.higher_dim_tree.root.inorder_attach(i)
+        if j:
+            self.higher_dim_tree.root.inorder_attach(j)
+        else:
+            self.higher_dim_tree.root.inorder_attach(self.higher_dim_tree.leaves_hanging[0])
+
+        if self.dimension is 1:
+            self.higher_dim_tree.fill_higher_dim()
+
+    def postorder_insertion(self, node):
+        # First recur on left child
+        if self.left:
+            self.left.postorder_insertion(node)
+        else:
+            if node.dimension is 1:
+                higher_dim_leaf = leaf(self.left_leaf.y, self.left_leaf.x, self.left_leaf.z)
+            else:
+                higher_dim_leaf = leaf(self.left_leaf.z, self.left_leaf.x, self.left_leaf.y)
+            node.higher_dim_tree.leaves_hanging.add(higher_dim_leaf)
+
+        # then recur on right child
+        if self.right:
+            self.right.postorder_insertion(node)
+        elif self.right_leaf:
+            if node.dimension is 1:
+                higher_dim_leaf = leaf(self.right_leaf.y, self.right_leaf.x, self.right_leaf.z)
+            else:
+                higher_dim_leaf = leaf(self.right_leaf.z, self.right_leaf.x, self.right_leaf.y)
+            node.higher_dim_tree.leaves_hanging.add(higher_dim_leaf)
+
+        # post-order element
+        if node.dimension is 1:
+            higher_dim_node = AVL_Node(self.y, self.x, self.z, 2)
+        else:
+            higher_dim_node = AVL_Node(self.z, self.x, self.y, 3)
+        node.higher_dim_tree.insert(higher_dim_node)
+
+    def find_split(self, low, high):
+        if self.x is low or self.x is high:
+            return self
+        elif self.x < low:
+            if self.x > high:
+                return self
+            else:
+                split_node = self.right.find_split(low, high)
+        elif self.x < high:
+            return self
+        else:
+            split_node = self.left.find_split(low, high)
+        return split_node
+
+    def range_query(self, x_low, x_high, y_low, y_high, z_low, z_high):  # limits for each dimension
+
+        x_split = self.find_split(x_low, x_high)
+        if x_split is None:
+            return
+
+        results = []
+        skyline = SortedList()
+
+        x_get_leaves = x_split.left
+        while x_get_leaves:
+            if x_get_leaves.right:
+                y_split = x_get_leaves.higher_dim_tree.root.find_split(y_low, y_high)
+                y_split.next_level_query(y_low, y_high, z_low, z_high, results, skyline)
+
+            if x_get_leaves.x <= x_low:
+                range_q, dominant = x_get_leaves.higher_dim_tree.root.higher_dim_tree.root.report_leaves(z_low, z_high)
+                if range_q:
+                    results.extend(range_q)
+                    for i in dominant:
+                        skyline.add(i)
+            x_get_leaves = x_get_leaves.left
+
+        x_get_leaves = x_split.right
+        while x_get_leaves:
+            if x_get_leaves.x > x_high:
+                break
+            if x_get_leaves.left:
+                y_split = x_get_leaves.higher_dim_tree.root.find_split(y_low, y_high)
+                y_split.next_level_query(y_low, y_high, z_low, z_high, results, skyline)
+            else:
+                range_q, dominant = x_get_leaves.higher_dim_tree.root.higher_dim_tree.root.report_leaves(z_low, z_high)
+                if range_q:
+                    results.extend(range_q)
+                    for i in dominant:
+                        skyline.add(i)
+            x_get_leaves = x_get_leaves.right
+
+        return results, skyline
+
+    def next_level_query(self, y_low, y_high, z_low, z_high, results, skyline):
+        y_get_leaves = self.left
+        range_q, dominant = [], []
+
+        while y_get_leaves:
+            if y_get_leaves.right:
+                range_q, dominant = y_get_leaves.right.higher_dim_tree.root.report_leaves(z_low, z_high)
+            if range_q:
+                results.extend(range_q)
+                for i in dominant:
+                    skyline.add(i)
+            if y_get_leaves.x <= y_low:
+                range_q, dominant = y_get_leaves.higher_dim_tree.root.report_leaves(z_low, z_high)
+                if range_q:
+                    results.extend(range_q)
+                    for i in dominant:
+                        skyline.add(i)
+            y_get_leaves = y_get_leaves.left
+
+        y_get_leaves = self.right
+        while y_get_leaves:
+            if y_get_leaves.x > y_high:
+                break
+            if y_get_leaves.left:
+                range_q, dominant = y_get_leaves.left.higher_dim_tree.root.report_leaves(z_low, z_high)
+                if range_q:
+                    results.extend(range_q)
+                    for i in dominant:
+                        skyline.add(i)
+            else:
+                range_q, dominant = y_get_leaves.higher_dim_tree.root.report_leaves(z_low, z_high)
+                if range_q:
+                    results.extend(range_q)
+                    for i in dominant:
+                        skyline.add(i)
+            y_get_leaves = y_get_leaves.right
+
+    def report_leaves(self, low, high):
+        _leaf = self.find_leaf(low)
+        if _leaf.x > high:
+            return
+
+        results = [_leaf]
+        skyline = [_leaf]
+
+        _leaf = _leaf.successor
+        while _leaf and _leaf.x <= high:
+            results.append(_leaf)
+            if _leaf.y <= skyline[-1].y:
+                skyline.append(_leaf)
+            _leaf = _leaf.successor
+
+        return results, skyline
 
     def find_leaf(self, k):
         if k > self.x:

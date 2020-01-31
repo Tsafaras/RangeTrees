@@ -1,4 +1,12 @@
-from handle_csv import *
+import csv
+import random
+from pandas import read_csv
+from AVL_Tree import *
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from timeit import default_timer as timer
+my_csv = 'data-sets/data.csv'
+
 
 def giveanumber():
     size = int(input("Enter size of N: "))
@@ -6,35 +14,70 @@ def giveanumber():
         size = int(input("Enter size of N (greater than zero this time): "))
     return size
 
-# N = giveanumber()
-# fill_csv(Ν)
-tree = extract_csv()
 
+def fill_csv(N):  # N = number of data
+    x_dim = random.sample(range(1, N+1), N)
+    y_dim = random.sample(range(1, N+1), N)
+    z_dim = random.sample(range(1, N+1), N)
+    zipped = zip(x_dim, y_dim, z_dim)
+    with open(my_csv, mode='w') as file:
+        fields = ['x', 'y', 'z']
+        file_write = csv.DictWriter(file, fieldnames=fields)
+
+        file_write.writeheader()
+        for x, y, z in zipped:
+            file_write.writerow({'x': x, 'y': y, 'z': z})
+
+
+# N = giveanumber()
+# fill_csv(300)
+
+# --- Create 3D Scatter plot ---
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.set_xlabel('X Label')
+ax.set_ylabel('Y Label')
+ax.set_zlabel('Z Label')
+ax.set_title('Skyline Query!')
+
+# -- Read csv ---
+df = read_csv(my_csv)
+
+# --- Build Tree ---
 start = timer()
-results = tree.range_query()
+
+tree = AVL_Tree()
+for x, y, z in zip(df['x'], df['y'], df['z']):
+    node = AVL_Node(x, y, z)
+    tree.insert(node)
+    ax.scatter(x, y, z, c='blue')
+tree.fill_higher_dim()
+
+end = timer()
+time_elapsed = round(end - start, 3)
+print("build time:", time_elapsed)
+
+
+# --- Perform Range and Skyline Query ---
+start = timer()
+results, skyline = tree.range_query()
 if not results:
     exit(0)
 
-skyline, dominant_x, dominant_y = [results[0]], [results[0].y], [results[0].x]
-not_x, not_y = [], []
+dominant_x, dominant_y, dominant_z = [skyline[0].y], [skyline[0].x], [skyline[0].z]
 
-for i in results[1:]:
-    plt.scatter(i.y, i.x, c='green')
-    if i.y <= skyline[-1].y:
-        skyline.append(i)
+for i in results:  # results of range_query
+    ax.scatter(i.y, i.x, i.z, c='red')
+
+for i in skyline[1:]:  # skyline query candidates
+    if i.y <= dominant_x[-1]:
         dominant_x.append(i.y)
         dominant_y.append(i.x)
-    else:
-        not_x.append(i.y)
-        not_x.append(i.x)
-        plt.scatter(i.y, i.x, c='red')
-
+        dominant_z.append(i.z)
 end = timer()
-time_elapsed = round(end-start, 3)
-print("Skyline time:", time_elapsed)
-plt.scatter(dominant_x, dominant_y, c='coral')
+ax.scatter(dominant_x, dominant_y, dominant_z, c='green')
 
-plt.xlabel('x - axis')
-plt.ylabel('y - axis')
-plt.title('Skyline Query!')
+time_elapsed = round(end - start, 3)
+print("Skyline time:", time_elapsed)
+
 plt.show()
