@@ -1,4 +1,9 @@
-from handle_csv import *
+# import sys
+# from AVL_Tree import *
+from handle_csv import fill_csv, extract_csv
+# from AVL_Node import AVL_Node
+from time import process_time as pt
+# from math import log
 
 
 def giveanumber():
@@ -7,37 +12,14 @@ def giveanumber():
         size = int(input("Enter size of N (greater than zero this time): "))
     return size
 
+
 # N = giveanumber()
-#fill_csv(20)
+# fill_csv(10)
 tree = extract_csv()
-
-#tree.inorder()
-
-start = timer()
+# print(tree) # requires "pretty print tree.txt" code
+time = pt()  # time elapsed since start of program
+time = pt()-time
+# print("Elapsed time is:",time)
 results = tree.range_query()
-if not results:
-    exit(0)
-
-skyline, dominant_x, dominant_y = [results[0]], [results[0].y], [results[0].x]
-not_x, not_y = [], []
-
-for i in results[1:]:
-    plt.scatter(i.y, i.x, c='green')
-    if i.y <= skyline[-1].y:
-        skyline.append(i)
-        dominant_x.append(i.y)
-        dominant_y.append(i.x)
-    else:
-        not_x.append(i.y)
-        not_x.append(i.x)
-        plt.scatter(i.y, i.x, c='red')
-
-end = timer()
-time_elapsed = round(end-start, 3)
-print("Skyline time:", time_elapsed)
-plt.scatter(dominant_x, dominant_y, c='coral')
-
-plt.xlabel('x - axis')
-plt.ylabel('y - axis')
-plt.title('Skyline Query!')
-plt.show()
+for i in results:
+    print(i)
